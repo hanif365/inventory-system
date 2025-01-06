@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { InventoryItem } from "@/types/inventory";
+import { InventoryItem, UpdateInventoryItem } from "@/types/inventory";
 import { produce } from "immer";
 
 export interface InventoryState {
@@ -11,6 +11,10 @@ export interface InventoryState {
 export interface InventoryActions {
   fetchInventory: () => Promise<void>;
   addInventoryItem: (item: InventoryItem) => void;
+  updateInventoryItem: (
+    id: number,
+    updates: UpdateInventoryItem
+  ) => Promise<void>;
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
 }
@@ -62,6 +66,40 @@ export const createInventorySlice: StateCreator<InventorySlice> = (
         state.items = [item, ...state.items];
       })
     );
+  },
+
+  updateInventoryItem: async (id, updates) => {
+    const currentState = get();
+
+    try {
+      const response = await fetch(`/api/inventory/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) throw new Error("Failed to update item");
+
+      set(
+        produce((state) => {
+          const itemIndex = state.items.findIndex((item) => item.id === id);
+          if (itemIndex !== -1) {
+            state.items[itemIndex] = {
+              ...state.items[itemIndex],
+              ...updates,
+              updated_at: new Date().toISOString(),
+            };
+          }
+        })
+      );
+    } catch (error) {
+      console.error("Error updating item:", error);
+      set(
+        produce((state) => {
+          state.error = "Failed to update item";
+        })
+      );
+    }
   },
 
   setError: (error) =>
