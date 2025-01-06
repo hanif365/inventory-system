@@ -2,12 +2,18 @@ import { db } from "@/db/client";
 import { NextResponse } from "next/server";
 import { UpdateInventoryItem } from "@/types/inventory";
 
+type RouteParams = {
+  params: {
+    id: string;
+  };
+};
+
 export async function PATCH(
   request: Request,
-  context: { params: { id: number } }
+  { params }: RouteParams
 ) {
   try {
-    const { id } = await context.params;
+    const parsedId = parseInt(params.id);
     const updates: UpdateInventoryItem = await request.json();
 
     // Build the SQL update statement dynamically
@@ -23,7 +29,7 @@ export async function PATCH(
         SET ${updateFields}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
-      args: [...values, id],
+      args: [...values, parsedId],
     });
 
     return NextResponse.json(
@@ -41,14 +47,14 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  context: { params: { id: number } }
+  { params }: RouteParams
 ) {
   try {
-    const { id } = await context.params;
+    const parsedId = parseInt(params.id);
 
     await db.execute({
       sql: "DELETE FROM inventory_items WHERE id = ?",
-      args: [id],
+      args: [parsedId],
     });
 
     return NextResponse.json(
