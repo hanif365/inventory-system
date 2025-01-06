@@ -15,6 +15,7 @@ export interface InventoryActions {
     id: number,
     updates: UpdateInventoryItem
   ) => Promise<void>;
+  deleteInventoryItem: (id: number) => Promise<void>;
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
 }
@@ -114,4 +115,27 @@ export const createInventorySlice: StateCreator<InventorySlice> = (
         state.loading = loading;
       })
     ),
+
+  deleteInventoryItem: async (id) => {
+    try {
+      const response = await fetch(`/api/inventory/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete item");
+
+      set(
+        produce((state) => {
+          state.items = state.items.filter((item) => item.id !== id);
+        })
+      );
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      set(
+        produce((state) => {
+          state.error = "Failed to delete item";
+        })
+      );
+    }
+  },
 });

@@ -39,3 +39,29 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  context: { params: { id: string } }
+) {
+  try {
+    const { id } = context.params;
+    const parsedId = parseInt(id);
+
+    await db.execute({
+      sql: "DELETE FROM inventory_items WHERE id = ?",
+      args: [parsedId],
+    });
+
+    return NextResponse.json(
+      { message: "Item deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Failed to delete item:", error);
+    return NextResponse.json(
+      { error: "Failed to delete item" },
+      { status: 500 }
+    );
+  }
+}
