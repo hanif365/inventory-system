@@ -2,18 +2,20 @@
 
 import { useReducer } from 'react';
 import { CreateInventoryItem } from '@/types/inventory';
+import { useInventoryStore } from '@/store/store';
 
 type FormState = CreateInventoryItem;
 type FormAction = 
-  | { type: 'SET_FIELD'; field: keyof CreateInventoryItem; value: string | number }
+  | { type: 'SET_FIELD'; field: keyof CreateInventoryItem; value: string | number | null }
   | { type: 'RESET' };
 
 const initialState: FormState = {
   name: '',
   description: '',
-  quantity: '',
-  price: ''
+  quantity: null,
+  price: null
 };
+
 
 function formReducer(state: FormState, action: FormAction): FormState {
   switch (action.type) {
@@ -27,6 +29,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
 }
 
 export function InventoryForm() {
+  const { addInventoryItem } = useInventoryStore();
   const [state, dispatch] = useReducer(formReducer, initialState);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,6 +44,13 @@ export function InventoryForm() {
 
       if (!response.ok) throw new Error('Failed to create item');
       
+      const result = await response.json();
+      addInventoryItem({ 
+        ...state, 
+        id: result.data.id,
+        created_at: result.data.created_at,
+        updated_at: result.data.updated_at
+      });
       dispatch({ type: 'RESET' });
     } catch (error) {
       console.error('Error:', error);
@@ -82,14 +92,14 @@ export function InventoryForm() {
         <label className="block text-sm font-medium text-gray-700">Quantity</label>
         <input
           type="text"
-          value={state.quantity}
+          value={state.quantity ?? ''}
           onChange={(e) => {
             const value = e.target.value;
             if (value === '' || /^\d+$/.test(value)) {
               dispatch({
                 type: 'SET_FIELD',
                 field: 'quantity',
-                value: value === '' ? '' : Number(value)
+                value: value === '' ? null : Number(value)
               });
             }
           }}
@@ -98,18 +108,19 @@ export function InventoryForm() {
         />
       </div>
 
+
       <div>
         <label className="block text-sm font-medium text-gray-700">Price</label>
         <input
           type="text"
-          value={state.price}
+          value={state.price ?? ''}
           onChange={(e) => {
             const value = e.target.value;
-            if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            if (value === '' || /^\d+$/.test(value)) {
               dispatch({
                 type: 'SET_FIELD',
                 field: 'price',
-                value: value === '' ? '' : Number(value)
+                value: value === '' ? null : Number(value)
               });
             }
           }}
