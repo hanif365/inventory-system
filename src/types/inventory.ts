@@ -2,8 +2,8 @@ export interface InventoryItem {
   id: number;
   name: string;
   description: string;
-  quantity: number;
-  price: number;
+  quantity: string;
+  price: string;
   created_at: string;
   updated_at: string;
 }

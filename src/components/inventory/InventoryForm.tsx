@@ -11,8 +11,8 @@ type FormAction =
 const initialState: FormState = {
   name: '',
   description: '',
-  quantity: 0,
-  price: 0
+  quantity: '',
+  price: ''
 };
 
 function formReducer(state: FormState, action: FormAction): FormState {
@@ -59,7 +59,7 @@ export function InventoryForm() {
             field: 'name',
             value: e.target.value
           })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          className="mt-1 block w-full rounded-md border-2 border-red-500 shadow-sm"
           required
         />
       </div>
@@ -74,22 +74,26 @@ export function InventoryForm() {
             field: 'description',
             value: e.target.value
           })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm"
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Quantity</label>
         <input
-          type="number"
+          type="text"
           value={state.quantity}
-          onChange={(e) => dispatch({
-            type: 'SET_FIELD',
-            field: 'quantity',
-            value: Number(e.target.value)
-          })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          min="0"
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === '' || /^\d+$/.test(value)) {
+              dispatch({
+                type: 'SET_FIELD',
+                field: 'quantity',
+                value: value === '' ? '' : Number(value)
+              });
+            }
+          }}
+          className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm"
           required
         />
       </div>
@@ -97,16 +101,19 @@ export function InventoryForm() {
       <div>
         <label className="block text-sm font-medium text-gray-700">Price</label>
         <input
-          type="number"
+          type="text"
           value={state.price}
-          onChange={(e) => dispatch({
-            type: 'SET_FIELD',
-            field: 'price',
-            value: Number(e.target.value)
-          })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          min="0"
-          step="0.01"
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === '' || /^\d*\.?\d*$/.test(value)) {
+              dispatch({
+                type: 'SET_FIELD',
+                field: 'price',
+                value: value === '' ? '' : Number(value)
+              });
+            }
+          }}
+          className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm"
           required
         />
       </div>
