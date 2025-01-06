@@ -41,8 +41,6 @@ function reducer(state: State, action: Action): State {
 export function InventoryList() {
   const {
     items,
-    loading,
-    error,
     fetchInventory,
     updateInventoryItem,
     deleteInventoryItem,

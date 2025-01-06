@@ -70,7 +70,7 @@ export const createInventorySlice: StateCreator<InventorySlice> = (
   },
 
   updateInventoryItem: async (id, updates) => {
-    const currentState = get();
+    // const currentState = get();
 
     try {
       const response = await fetch(`/api/inventory/${id}`, {
@@ -83,7 +83,9 @@ export const createInventorySlice: StateCreator<InventorySlice> = (
 
       set(
         produce((state) => {
-          const itemIndex = state.items.findIndex((item) => item.id === id);
+          const itemIndex = state.items.findIndex(
+            (item: InventoryItem) => item.id === id
+          );
           if (itemIndex !== -1) {
             state.items[itemIndex] = {
               ...state.items[itemIndex],
@@ -126,7 +128,9 @@ export const createInventorySlice: StateCreator<InventorySlice> = (
 
       set(
         produce((state) => {
-          state.items = state.items.filter((item) => item.id !== id);
+          state.items = state.items.filter(
+            (item: InventoryItem) => item.id !== id
+          );
         })
       );
     } catch (error) {
