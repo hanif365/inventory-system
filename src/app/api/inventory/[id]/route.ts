@@ -4,11 +4,10 @@ import { UpdateInventoryItem } from "@/types/inventory";
 
 export async function PATCH(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: { id: number } }
 ) {
   try {
     const { id } = await context.params;
-    const parsedId = parseInt(id);
     const updates: UpdateInventoryItem = await request.json();
 
     // Build the SQL update statement dynamically
@@ -24,7 +23,7 @@ export async function PATCH(
         SET ${updateFields}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
-      args: [...values, parsedId],
+      args: [...values, id],
     });
 
     return NextResponse.json(
@@ -42,15 +41,14 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: { id: number } }
 ) {
   try {
-    const { id } = context.params;
-    const parsedId = parseInt(id);
+    const { id } = await context.params;
 
     await db.execute({
       sql: "DELETE FROM inventory_items WHERE id = ?",
-      args: [parsedId],
+      args: [id],
     });
 
     return NextResponse.json(
