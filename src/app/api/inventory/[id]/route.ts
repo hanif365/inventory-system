@@ -2,21 +2,15 @@ import { db } from "@/db/client";
 import { NextResponse } from "next/server";
 import { UpdateInventoryItem } from "@/types/inventory";
 
-type RouteParams = {
-  params: {
-    id: string;
-  };
-};
-
 export async function PATCH(
   request: Request,
-  { params }: RouteParams
+  { params }: { params: { id: string } }
 ) {
   try {
-    const parsedId = parseInt(params.id);
+    /* @next-codemod-ignore */
+    const parsedId = await parseInt(params.id);
     const updates: UpdateInventoryItem = await request.json();
 
-    // Build the SQL update statement dynamically
     const updateFields = Object.entries(updates)
       .map(([key]) => `${key} = ?`)
       .join(", ");
@@ -47,9 +41,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: RouteParams
+  { params }: { params: { id: string } }
 ) {
   try {
+    /* @next-codemod-ignore */
     const parsedId = parseInt(params.id);
 
     await db.execute({
