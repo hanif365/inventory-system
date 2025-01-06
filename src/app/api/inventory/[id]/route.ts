@@ -4,11 +4,10 @@ import { UpdateInventoryItem } from "@/types/inventory";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    /* @next-codemod-ignore */
-    const parsedId = await parseInt(params.id);
+    const parsedId = parseInt((await params).id);
     const updates: UpdateInventoryItem = await request.json();
 
     const updateFields = Object.entries(updates)
@@ -41,11 +40,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    /* @next-codemod-ignore */
-    const parsedId = parseInt(params.id);
+    const parsedId = parseInt((await params).id);
 
     await db.execute({
       sql: "DELETE FROM inventory_items WHERE id = ?",
