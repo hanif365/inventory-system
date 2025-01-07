@@ -39,12 +39,8 @@ function reducer(state: State, action: Action): State {
 }
 
 export function InventoryList() {
-  const {
-    items,
-    fetchInventory,
-    updateInventoryItem,
-    deleteInventoryItem,
-  } = useInventoryStore();
+  const { items, fetchInventory, updateInventoryItem, deleteInventoryItem } =
+    useInventoryStore();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
@@ -69,7 +65,10 @@ export function InventoryList() {
 
   const handleUpdate = async (id: number) => {
     try {
-      await updateInventoryItem(id, state.editForm);
+      // Remove name from editForm before updating
+      const { name, ...updateData } = state.editForm;
+      console.log("name", name);
+      await updateInventoryItem(id, updateData);
       dispatch({ type: "RESET" });
     } catch (error) {
       console.error("Error updating item:", error);
@@ -99,13 +98,8 @@ export function InventoryList() {
                 <input
                   type="text"
                   value={state.editForm.name ?? ""}
-                  onChange={(e) =>
-                    dispatch({
-                      type: "UPDATE_FORM",
-                      updates: { name: e.target.value },
-                    })
-                  }
-                  className="w-full border rounded px-2 py-1"
+                  disabled
+                  className="w-full border rounded px-2 py-1 bg-gray-100"
                 />
                 <input
                   type="text"
@@ -169,7 +163,7 @@ export function InventoryList() {
                 <p className="text-gray-600">{item.description}</p>
                 <div className="mt-2 flex justify-between">
                   <span>Quantity: {item.quantity}</span>
-                  <span>Price: ${Number(item.price)}</span>
+                  <span>Unit Price: ${Number(item.price)}</span>
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button

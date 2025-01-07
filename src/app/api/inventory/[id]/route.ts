@@ -10,6 +10,13 @@ export async function PATCH(
     const parsedId = parseInt((await params).id);
     const updates: UpdateInventoryItem = await request.json();
 
+    if ('name' in updates) {
+      return NextResponse.json(
+        { error: "Name field cannot be updated" },
+        { status: 400 }
+      );
+    }
+
     const updateFields = Object.entries(updates)
       .map(([key]) => `${key} = ?`)
       .join(", ");
