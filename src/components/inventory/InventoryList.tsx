@@ -93,6 +93,13 @@ export function InventoryList() {
       <div className="grid gap-4">
         {items.map((item) => (
           <div key={item.id} className="border p-4 rounded-lg shadow">
+            {item.image_url && (
+              <img
+                src={item.image_url}
+                alt={item.name}
+                className="w-32 h-32 object-cover rounded mb-4"
+              />
+            )}
             {state.editingId === item.id ? (
               <div className="space-y-2">
                 <input

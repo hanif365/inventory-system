@@ -20,21 +20,14 @@ export async function POST(request: Request) {
   try {
     const body: CreateInventoryItem = await request.json();
     
-    // First check if table exists
-    await db.execute('SELECT 1 FROM inventory_items LIMIT 1').catch(async () => {
-      // If table doesn't exist, create it
-      await db.execute(schema);
-    });
-    
     const result = await db.execute({
       sql: `
-        INSERT INTO inventory_items (name, description, quantity, price)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO inventory_items (name, description, quantity, price, image_url)
+        VALUES (?, ?, ?, ?, ?)
       `,
-      args: [body.name, body.description, body.quantity, body.price],
+      args: [body.name, body.description, body.quantity, body.price, body.image_url],
     });
 
-    // Convert BigInt to Number for JSON serialization
     const id = Number(result.lastInsertRowid);
 
     return NextResponse.json(
@@ -44,7 +37,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Failed to create item:', error);
     return NextResponse.json(
-      { error: 'Failed to create item' },
+      { error: 'Failed to create item!!!!' },
       { status: 500 }
     );
   }

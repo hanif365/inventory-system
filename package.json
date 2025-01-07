@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "db:setup": "tsx scripts/db/setupDatabase.ts"
+    "db:setup": "tsx src/db/setupDatabase.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
