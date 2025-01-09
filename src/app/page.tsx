@@ -29,7 +29,6 @@ function HomePage() {
   );
 }
 
-
 export default function Home() {
   const { status } = useSession();
 
