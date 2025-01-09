@@ -3,6 +3,7 @@
 import { useEffect, useReducer } from "react";
 import { useInventoryStore } from "@/store/store";
 import { UpdateInventoryItem } from "@/types/inventory";
+import Image from "next/image";
 
 type State = {
   editingId: number | null;
@@ -54,7 +55,7 @@ export function InventoryList() {
         type: "SET_EDITING",
         id,
         form: {
-          name: item.name,
+          // name: item.name,
           description: item.description,
           quantity: item.quantity,
           price: item.price,
@@ -66,8 +67,8 @@ export function InventoryList() {
   const handleUpdate = async (id: number) => {
     try {
       // Remove name from editForm before updating
-      const { name, ...updateData } = state.editForm;
-      console.log("name", name);
+      const { ...updateData } = state.editForm;
+     
       await updateInventoryItem(id, updateData);
       dispatch({ type: "RESET" });
     } catch (error) {
@@ -94,9 +95,11 @@ export function InventoryList() {
         {items.map((item) => (
           <div key={item.id} className="border p-4 rounded-lg shadow">
             {item.image_url && (
-              <img
+              <Image
                 src={item.image_url}
                 alt={item.name}
+                width={1000}
+                height={1000}
                 className="w-32 h-32 object-cover rounded mb-4"
               />
             )}
@@ -104,7 +107,7 @@ export function InventoryList() {
               <div className="space-y-2">
                 <input
                   type="text"
-                  value={state.editForm.name ?? ""}
+                  value={item.name ?? ""}
                   disabled
                   className="w-full border rounded px-2 py-1 bg-gray-100"
                 />
