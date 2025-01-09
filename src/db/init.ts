@@ -4,8 +4,11 @@ import addImageUrlColumn from "./migrations/addImageUrl";
 
 export async function initializeDatabase() {
   try {
-    // Create base table
-    await db.execute(schema);
+    // Create tables one by one
+    for (const [table, query] of Object.entries(schema)) {
+      await db.execute(query);
+      console.log(`Created ${table} table successfully`);
+    }
     console.log("Database schema initialized successfully");
 
     // Run migrations

@@ -1,7 +1,6 @@
 import { db } from '@/db/client';
 import { NextResponse } from 'next/server';
 import { CreateInventoryItem } from '@/types/inventory';
-import { schema } from '@/db/schema';
 
 export async function GET() {
   try {

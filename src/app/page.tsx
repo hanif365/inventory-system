@@ -1,44 +1,41 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { Providers } from "./providers";
+import { useSession } from "next-auth/react";
 import { Loading } from "@/components/shared/Loading";
+import Link from "next/link";
 
-const InventoryForm = dynamic(
-  () =>
-    import("@/components/inventory/InventoryForm").then(
-      (mod) => mod.InventoryForm
-    ),
-  {
-    ssr: false,
-    loading: () => <Loading />,
-  }
-);
+function HomePage() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <h1 className="text-4xl font-bold mb-8">Inventory Management System</h1>
+      <p className="text-xl mb-8 text-gray-600">
+        Welcome to our inventory management solution
+      </p>
+      <div className="space-x-4">
+        <Link
+          href="/login"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Login
+        </Link>
+        <Link
+          href="/register"
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Register
+        </Link>
+      </div>
+    </div>
+  );
+}
 
-const InventoryList = dynamic(
-  () =>
-    import("@/components/inventory/InventoryList").then(
-      (mod) => mod.InventoryList
-    ),
-  {
-    ssr: false,
-    loading: () => <Loading />,
-  }
-);
 
 export default function Home() {
-  return (
-    <Providers>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Inventory Management System</h1>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Add Item</h2>
-            <InventoryForm />
-          </div>
-          <InventoryList />
-        </div>
-      </div>
-    </Providers>
-  );
+  const { status } = useSession();
+
+  if (status === "loading") {
+    return <Loading />;
+  }
+
+  return <HomePage />;
 }
