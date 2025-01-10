@@ -44,7 +44,6 @@ A modern inventory management system built with Next.js, SQLite, and Zustand. Fe
 ```bash
 git clone https://github.com/hanif365/inventory-system.git
 cd inventory-system
-npm install
 ```
 
 2. Install dependencies:
