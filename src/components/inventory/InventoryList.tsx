@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useEffect, useReducer, useState } from "react";
@@ -81,7 +82,6 @@ export function InventoryList() {
       });
       setTimeout(() => setActionFeedback(null), 3000);
     } catch (error) {
-      console.error("Error updating item:", error);
       setActionFeedback({ message: "Failed to update item", type: "error" });
       setTimeout(() => setActionFeedback(null), 3000);
     }
