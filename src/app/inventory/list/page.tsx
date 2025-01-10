@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { Loading } from "@/components/shared/Loading/Loading";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { InventoryList } from "@/components/Inventory/InventoryList";
+import { InventoryList } from "@/components/inventory/InventoryList";
+
 
 export default function InventoryListPage() {
   const { status } = useSession();

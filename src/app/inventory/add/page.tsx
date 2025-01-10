@@ -2,11 +2,12 @@
 
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import { InventoryForm } from "@/components/Inventory/InventoryForm";
+
 
 import { Loading } from "@/components/shared/Loading/Loading";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { InventoryForm } from "@/components/inventory/InventoryForm";
 
 export default function AddInventoryPage() {
   const { status } = useSession();
