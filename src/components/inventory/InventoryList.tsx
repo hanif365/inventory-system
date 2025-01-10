@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useInventoryStore } from "@/store/store";
 import { UpdateInventoryItem } from "@/types/inventory";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 type State = {
   editingId: number | null;
@@ -40,9 +42,14 @@ function reducer(state: State, action: Action): State {
 }
 
 export function InventoryList() {
+  const router = useRouter();
   const { items, fetchInventory, updateInventoryItem, deleteInventoryItem } =
     useInventoryStore();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [actionFeedback, setActionFeedback] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   useEffect(() => {
     fetchInventory();
@@ -55,7 +62,6 @@ export function InventoryList() {
         type: "SET_EDITING",
         id,
         form: {
-          // name: item.name,
           description: item.description,
           quantity: item.quantity,
           price: item.price,
@@ -66,13 +72,18 @@ export function InventoryList() {
 
   const handleUpdate = async (id: number) => {
     try {
-      // Remove name from editForm before updating
       const { ...updateData } = state.editForm;
-     
       await updateInventoryItem(id, updateData);
       dispatch({ type: "RESET" });
+      setActionFeedback({
+        message: "Item updated successfully!",
+        type: "success",
+      });
+      setTimeout(() => setActionFeedback(null), 3000);
     } catch (error) {
       console.error("Error updating item:", error);
+      setActionFeedback({ message: "Failed to update item", type: "error" });
+      setTimeout(() => setActionFeedback(null), 3000);
     }
   };
 
@@ -83,117 +94,200 @@ export function InventoryList() {
   const handleDelete = async (id: number) => {
     try {
       await deleteInventoryItem(id);
+      setActionFeedback({
+        message: "Item deleted successfully!",
+        type: "success",
+      });
+      setTimeout(() => setActionFeedback(null), 3000);
     } catch (error) {
       console.error("Error deleting item:", error);
+      setActionFeedback({ message: "Failed to delete item", type: "error" });
+      setTimeout(() => setActionFeedback(null), 3000);
     }
   };
 
   return (
-    <div className="mt-8">
-      <h2 className="text-xl font-semibold mb-4">Inventory Items</h2>
-      <div className="grid gap-4">
-        {items.map((item) => (
-          <div key={item.id} className="border p-4 rounded-lg shadow">
-            {item.image_url && (
-              <Image
-                src={item.image_url}
-                alt={item.name}
-                width={1000}
-                height={1000}
-                className="w-32 h-32 object-cover rounded mb-4"
-              />
-            )}
-            {state.editingId === item.id ? (
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={item.name ?? ""}
-                  disabled
-                  className="w-full border rounded px-2 py-1 bg-gray-100"
-                />
-                <input
-                  type="text"
-                  value={state.editForm.description ?? ""}
-                  onChange={(e) =>
-                    dispatch({
-                      type: "UPDATE_FORM",
-                      updates: { description: e.target.value },
-                    })
-                  }
-                  className="w-full border rounded px-2 py-1"
-                />
-                <input
-                  type="text"
-                  value={state.editForm.quantity ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "" || /^\d+$/.test(value)) {
-                      dispatch({
-                        type: "UPDATE_FORM",
-                        updates: {
-                          quantity: value === "" ? null : Number(value),
-                        },
-                      });
-                    }
-                  }}
-                  className="w-full border rounded px-2 py-1"
-                />
-                <input
-                  type="text"
-                  value={state.editForm.price ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "" || /^\d+$/.test(value)) {
-                      dispatch({
-                        type: "UPDATE_FORM",
-                        updates: { price: value === "" ? null : Number(value) },
-                      });
-                    }
-                  }}
-                  className="w-full border rounded px-2 py-1"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleUpdate(item.id)}
-                    className="bg-green-500 text-white px-3 py-1 rounded"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className="bg-gray-500 text-white px-3 py-1 rounded"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <h3 className="font-medium">{item.name}</h3>
-                <p className="text-gray-600">{item.description}</p>
-                <div className="mt-2 flex justify-between">
-                  <span>Quantity: {item.quantity}</span>
-                  <span>Unit Price: ${Number(item.price)}</span>
-                </div>
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={() => handleEdit(item.id)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="mt-4 sm:mt-6 md:mt-8"
+    >
+      {actionFeedback && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+            actionFeedback.type === "success" ? "bg-green-500" : "bg-red-500"
+          } text-white`}
+        >
+          {actionFeedback.message}
+        </motion.div>
+      )}
+      <div className="flex justify-end px-4 sm:px-6 lg:px-8">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => router.push("/inventory/add")}
+          className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-4 sm:px-6 py-2 rounded-lg font-medium shadow-md text-sm sm:text-base"
+        >
+          Add New Item
+        </motion.button>
       </div>
-    </div>
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8 md:mt-10 px-4 sm:px-6 lg:px-8"
+        style={{ alignItems: "start" }}
+      >
+        <AnimatePresence>
+          {items.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: index * 0.1 }}
+              className="bg-white rounded-xl shadow overflow-hidden transition-all duration-300 hover:shadow-[0_3px_8px_rgba(8,_112,_184,_0.3)]"
+              layout
+            >
+              {item.image_url && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="relative h-36 sm:h-48 w-full"
+                >
+                  <Image
+                    src={item.image_url}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                  />
+                </motion.div>
+              )}
+              <motion.div className="p-3 sm:p-4">
+                {state.editingId === item.id ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="space-y-2"
+                  >
+                    <input
+                      type="text"
+                      value={item.name ?? ""}
+                      disabled
+                      className="w-full border rounded-lg px-2 sm:px-3 py-1 bg-gray-50 text-sm sm:text-base"
+                    />
+                    <textarea
+                      value={state.editForm.description ?? ""}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "UPDATE_FORM",
+                          updates: { description: e.target.value },
+                        })
+                      }
+                      className="w-full border rounded-lg px-2 sm:px-3 py-1 focus:ring-2 focus:ring-indigo-500 resize-none text-sm sm:text-base"
+                    />
+                    <input
+                      type="text"
+                      value={state.editForm.quantity ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^\d+$/.test(value)) {
+                          dispatch({
+                            type: "UPDATE_FORM",
+                            updates: {
+                              quantity: value === "" ? null : Number(value),
+                            },
+                          });
+                        }
+                      }}
+                      className="w-full border rounded-lg px-2 sm:px-3 py-1 focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
+                    />
+                    <input
+                      type="text"
+                      value={state.editForm.price ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^\d+$/.test(value)) {
+                          dispatch({
+                            type: "UPDATE_FORM",
+                            updates: {
+                              price: value === "" ? null : Number(value),
+                            },
+                          });
+                        }
+                      }}
+                      className="w-full border rounded-lg px-2 sm:px-3 py-1 focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
+                    />
+                    <div className="flex gap-2">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleUpdate(item.id)}
+                        className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-3 sm:px-4 py-1 rounded-lg font-medium shadow-md text-sm sm:text-base"
+                      >
+                        Save
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleCancel}
+                        className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white px-3 sm:px-4 py-1 rounded-lg font-medium shadow-md text-sm sm:text-base"
+                      >
+                        Cancel
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div layout>
+                    <motion.h3
+                      className="text-lg sm:text-xl font-semibold text-gray-800 mb-2"
+                      layout
+                    >
+                      {item.name}
+                    </motion.h3>
+                    <motion.p
+                      className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4"
+                      layout
+                    >
+                      {item.description}
+                    </motion.p>
+                    <motion.div
+                      className="flex justify-between mb-3 sm:mb-4 text-xs sm:text-sm"
+                      layout
+                    >
+                      <span className="bg-indigo-100 text-indigo-800 px-2 sm:px-3 py-1 rounded-full">
+                        Qty: {item.quantity}
+                      </span>
+                      <span className="bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-full">
+                        £ {Number(item.price)}
+                      </span>
+                    </motion.div>
+                    <motion.div className="flex gap-2" layout>
+                      <motion.button
+                        whileHover={{ scale: 1.05, backgroundColor: "#3B82F6" }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleEdit(item.id)}
+                        className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 sm:px-4 py-1 rounded-lg font-medium shadow-md text-sm sm:text-base transition-colors duration-200"
+                      >
+                        Edit
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05, backgroundColor: "#EF4444" }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleDelete(item.id)}
+                        className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 sm:px-4 py-1 rounded-lg font-medium shadow-md text-sm sm:text-base transition-colors duration-200"
+                      >
+                        Delete
+                      </motion.button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </motion.div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
   );
 }

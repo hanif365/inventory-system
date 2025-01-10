@@ -3,6 +3,9 @@
 import { useRef, useReducer, useEffect, useState } from "react";
 import { useInventoryStore } from "@/store/store";
 import { CreateInventoryItem, InventoryItem } from "@/types/inventory";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 type FormState = CreateInventoryItem & {
   imageFile: File | null;
@@ -40,14 +43,20 @@ function formReducer(state: FormState, action: FormAction): FormState {
 }
 
 export function InventoryForm() {
+  const router = useRouter();
   const { addInventoryItem, updateInventoryItem } = useInventoryStore();
   const [state, dispatch] = useReducer(formReducer, initialState);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [existingNames, setExistingNames] = useState<string[]>([]);
   const [isNewItem, setIsNewItem] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   useEffect(() => {
-    // Fetch existing item names
     const fetchNames = async () => {
       try {
         const response = await fetch("/api/inventory");
@@ -62,8 +71,40 @@ export function InventoryForm() {
     fetchNames();
   }, []);
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      dispatch({ type: "SET_IMAGE", file });
+    }
+  };
+
+  const showNotification = (message: string, type: "success" | "error") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!state.imageFile && isNewItem) {
+      showNotification("Please upload an image", "error");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       let imageUrl = null;
@@ -98,6 +139,7 @@ export function InventoryForm() {
         };
 
         await updateInventoryItem(existingItem.id, updatedItem);
+        showNotification("Item updated successfully!", "success");
       } else {
         const createResponse = await fetch("/api/inventory", {
           method: "POST",
@@ -121,6 +163,7 @@ export function InventoryForm() {
         });
 
         setExistingNames((prev) => [...prev, state.name]);
+        showNotification("Item added successfully!", "success");
       }
 
       dispatch({ type: "RESET" });
@@ -129,164 +172,346 @@ export function InventoryForm() {
       }
     } catch (error) {
       console.error("Error:", error);
+      showNotification("Failed to save item", "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Name</label>
-        <div className="mt-1 space-y-2">
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="newItem"
-              checked={isNewItem}
-              onChange={() => setIsNewItem(true)}
-              className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-            />
-            <label htmlFor="newItem" className="text-sm text-gray-700">
-              New Item
-            </label>
-
-            <input
-              type="radio"
-              id="existingItem"
-              checked={!isNewItem}
-              onChange={() => setIsNewItem(false)}
-              className="ml-4 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-            />
-            <label htmlFor="existingItem" className="text-sm text-gray-700">
-              Existing Item
-            </label>
-          </div>
-
-          {isNewItem ? (
-            <input
-              type="text"
-              value={state.name}
-              onChange={(e) =>
-                dispatch({
-                  type: "SET_FIELD",
-                  field: "name",
-                  value: e.target.value,
-                })
-              }
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
-            />
-          ) : (
-            <select
-              value={state.name}
-              onChange={(e) =>
-                dispatch({
-                  type: "SET_FIELD",
-                  field: "name",
-                  value: e.target.value,
-                })
-              }
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select an item</option>
-              {existingNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Description
-        </label>
-        <textarea
-          value={state.description || ""}
-          onChange={(e) =>
-            dispatch({
-              type: "SET_FIELD",
-              field: "description",
-              value: e.target.value,
-            })
-          }
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Quantity
-        </label>
-        <input
-          type="number"
-          value={state.quantity || ""}
-          onChange={(e) =>
-            dispatch({
-              type: "SET_FIELD",
-              field: "quantity",
-              value: e.target.value ? Number(e.target.value) : null,
-            })
-          }
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Price</label>
-        <input
-          type="number"
-          value={state.price || ""}
-          onChange={(e) =>
-            dispatch({
-              type: "SET_FIELD",
-              field: "price",
-              value: e.target.value ? Number(e.target.value) : null,
-            })
-          }
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Image</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0] || null;
-            dispatch({ type: "SET_IMAGE", file });
-          }}
-          ref={fileInputRef}
-          className="mt-1 block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-full file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100"
-        />
-      </div>
-
-      {state.imageFile && (
-        <div className="mt-2">
-          <img
-            src={URL.createObjectURL(state.imageFile)}
-            alt="Preview"
-            className="w-32 h-32 object-cover rounded"
-          />
-        </div>
+    <motion.form
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      onSubmit={handleSubmit}
+      className="w-[95%] sm:w-[98%] md:max-w-4xl mx-auto p-4 sm:p-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-lg shadow-lg space-y-4 sm:space-y-6 border border-blue-100"
+    >
+      {notification && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+            notification.type === "success" ? "bg-green-500" : "bg-red-500"
+          } text-white`}
+        >
+          {notification.message}
+        </motion.div>
       )}
 
-      <button
-        type="submit"
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2"
       >
-        Add Item
-      </button>
-    </form>
+        <motion.div
+          initial={{ x: -20 }}
+          animate={{ x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="col-span-1 md:col-span-2"
+        >
+          <label className="block text-base sm:text-lg font-semibold text-indigo-900 mb-2">
+            Item Details
+          </label>
+          <motion.div className="p-3 sm:p-4 bg-white bg-opacity-70 backdrop-blur-sm rounded-lg space-y-3 sm:space-y-4 shadow-inner">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+              <motion.div className="flex items-center">
+                <input
+                  type="radio"
+                  id="newItem"
+                  checked={isNewItem}
+                  onChange={() => setIsNewItem(true)}
+                  className="w-4 sm:w-5 h-4 sm:h-5 text-indigo-600 focus:ring-indigo-500 outline-none"
+                />
+                <label
+                  htmlFor="newItem"
+                  className="ml-2 text-xs sm:text-sm font-medium text-indigo-700"
+                >
+                  New Item
+                </label>
+              </motion.div>
+
+              <motion.div
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center"
+              >
+                <input
+                  type="radio"
+                  id="existingItem"
+                  checked={!isNewItem}
+                  onChange={() => setIsNewItem(false)}
+                  className="w-4 sm:w-5 h-4 sm:h-5 text-indigo-600 focus:ring-indigo-500 outline-none"
+                />
+                <label
+                  htmlFor="existingItem"
+                  className="ml-2 text-xs sm:text-sm font-medium text-indigo-700"
+                >
+                  Existing Item
+                </label>
+              </motion.div>
+            </div>
+
+            <div className="h-[38px] sm:h-[42px]">
+              <AnimatePresence mode="wait">
+                {isNewItem ? (
+                  <motion.input
+                    key="newItemInput"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    type="text"
+                    value={state.name}
+                    onChange={(e) =>
+                      dispatch({
+                        type: "SET_FIELD",
+                        field: "name",
+                        value: e.target.value,
+                      })
+                    }
+                    placeholder="Enter item name"
+                    className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded-md border border-indigo-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors bg-white bg-opacity-80"
+                    required
+                  />
+                ) : (
+                  <motion.select
+                    key="existingItemSelect"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    value={state.name}
+                    onChange={(e) =>
+                      dispatch({
+                        type: "SET_FIELD",
+                        field: "name",
+                        value: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded-md border border-indigo-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors bg-white bg-opacity-80"
+                    required
+                  >
+                    <option value="">Select an item</option>
+                    {existingNames.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </motion.select>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        <motion.div
+          initial={{ x: -20 }}
+          animate={{ x: 0 }}
+          transition={{ delay: 0.4 }}
+          className="col-span-1 md:col-span-2"
+        >
+          <label className="block text-xs sm:text-sm font-medium text-indigo-700 mb-1">
+            Description
+          </label>
+          <motion.textarea
+            whileFocus={{ scale: 1.01 }}
+            value={state.description || ""}
+            onChange={(e) =>
+              dispatch({
+                type: "SET_FIELD",
+                field: "description",
+                value: e.target.value,
+              })
+            }
+            rows={4}
+            className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded-md border border-indigo-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors resize-none bg-white bg-opacity-80"
+            placeholder="Enter item description"
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ x: -20 }}
+          animate={{ x: 0 }}
+          transition={{ delay: 0.5 }}
+          className="col-span-1"
+        >
+          <label className="block text-xs sm:text-sm font-medium text-indigo-700 mb-1">
+            Quantity
+          </label>
+          <motion.input
+            whileFocus={{ scale: 1.01 }}
+            type="number"
+            value={state.quantity || ""}
+            onChange={(e) =>
+              dispatch({
+                type: "SET_FIELD",
+                field: "quantity",
+                value: e.target.value ? Number(e.target.value) : null,
+              })
+            }
+            min="0"
+            className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded-md border border-indigo-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors bg-white bg-opacity-80"
+            required
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ x: -20 }}
+          animate={{ x: 0 }}
+          transition={{ delay: 0.6 }}
+          className="col-span-1"
+        >
+          <label className="block text-xs sm:text-sm font-medium text-indigo-700 mb-1">
+            Price
+          </label>
+          <motion.input
+            whileFocus={{ scale: 1.01 }}
+            type="number"
+            value={state.price || ""}
+            onChange={(e) =>
+              dispatch({
+                type: "SET_FIELD",
+                field: "price",
+                value: e.target.value ? Number(e.target.value) : null,
+              })
+            }
+            min="0"
+            step="0.01"
+            className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded-md border border-indigo-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors bg-white bg-opacity-80"
+            required
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ x: -20 }}
+          animate={{ x: 0 }}
+          transition={{ delay: 0.7 }}
+          className="col-span-1 md:col-span-2"
+        >
+          <label className="block text-xs sm:text-sm font-medium text-indigo-700 mb-1">
+            Image
+          </label>
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            className={`border-2 border-dashed rounded-lg p-4 sm:p-6 text-center cursor-pointer transition-colors ${
+              isDragging
+                ? "border-indigo-500 bg-indigo-50"
+                : "border-indigo-300 hover:border-indigo-500"
+            } bg-white bg-opacity-60`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <div className="space-y-1 sm:space-y-2">
+              <div className="text-indigo-600 text-sm sm:text-base">
+                <p>Drag and drop an image here, or</p>
+                <p className="text-indigo-700 font-medium">
+                  click to select a file
+                </p>
+              </div>
+              <p className="text-xs sm:text-sm text-indigo-500">
+                PNG, JPG, GIF up to 10MB
+              </p>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                dispatch({ type: "SET_IMAGE", file });
+              }}
+              ref={fileInputRef}
+              className="hidden"
+              required={isNewItem}
+            />
+          </motion.div>
+        </motion.div>
+
+        <AnimatePresence>
+          {state.imageFile && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="col-span-1 md:col-span-2"
+            >
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative w-32 h-32 sm:w-40 sm:h-40"
+              >
+                <Image
+                  src={URL.createObjectURL(state.imageFile)}
+                  fill
+                  alt="Preview"
+                  className="rounded-lg object-cover shadow-md"
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          type="submit"
+          disabled={isSubmitting}
+          className={`flex-1 text-xs sm:text-sm lg:text-base px-4 sm:px-6 py-3 sm:py-4 relative uppercase font-semibold tracking-wider leading-none overflow-hidden ${
+            isSubmitting
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 cursor-pointer"
+          } rounded-lg text-white transition-all duration-300 shadow-lg hover:shadow-xl`}
+        >
+          <span className="absolute inset-0 bg-white opacity-10"></span>
+          <span className="relative z-10 flex items-center justify-center">
+            {isSubmitting ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Item Adding...
+              </>
+            ) : (
+              "Add Item"
+            )}
+          </span>
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          type="button"
+          onClick={() => router.push("/inventory/list")}
+          disabled={isSubmitting}
+          className={`text-xs sm:text-sm lg:text-base px-4 sm:px-6 py-3 sm:py-4 relative uppercase font-semibold tracking-wider leading-none overflow-hidden ${
+            isSubmitting
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 cursor-pointer"
+          } rounded-lg text-white transition-all duration-300 shadow-lg hover:shadow-xl`}
+        >
+          <span className="absolute inset-0 bg-white opacity-10"></span>
+          <span className="relative z-10">Show List</span>
+        </motion.button>
+      </div>
+    </motion.form>
   );
 }
