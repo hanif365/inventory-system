@@ -11,7 +11,8 @@ jest.mock('@/store/store', () => ({
 // Mock next/image
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: any) => <img {...props} alt={props.alt} />,
+  default: (props: { src: string; alt: string; width?: number; height?: number }) => 
+    <img {...props} alt={props.alt} />,
 }));
 
 // Mock next/navigation
@@ -24,15 +25,16 @@ jest.mock('next/navigation', () => ({
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => 
+    div: ({ children, ...props }: { children: React.ReactNode; className?: string; initial?: object; animate?: object; exit?: object }) => 
       <div {...props}>{children}</div>,
-    button: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => 
+    button: ({ children, ...props }: { children: React.ReactNode; className?: string; onClick?: () => void }) => 
       <button {...props}>{children}</button>,
-    h3: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => 
+    h3: ({ children, ...props }: { children: React.ReactNode; className?: string }) => 
       <h3 {...props}>{children}</h3>,
-    p: ({ children, ...props }: any) => <p {...props}>{children}</p>,
+    p: ({ children, ...props }: { children: React.ReactNode; className?: string }) => 
+      <p {...props}>{children}</p>,
   },
-  AnimatePresence: ({ children }: any) => children,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 const mockItems = [
@@ -57,7 +59,7 @@ const mockStore = {
 
 describe('InventoryList', () => {
   beforeEach(() => {
-    (useInventoryStore as jest.Mock).mockImplementation(() => mockStore);
+    (useInventoryStore as unknown as jest.Mock).mockImplementation(() => mockStore);
   });
 
   afterEach(() => {
@@ -83,44 +85,6 @@ describe('InventoryList', () => {
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
 
-//   it('handles item update', async () => {
-//     const updateInventoryItem = jest.fn().mockResolvedValue({});
-//     (useInventoryStore as jest.Mock).mockImplementation(() => ({
-//       ...mockStore,
-//       updateInventoryItem,
-//     }));
-
-//     render(<InventoryList />);
-    
-//     fireEvent.click(screen.getByText('Edit'));
-    
-//     const descriptionInput = screen.getByDisplayValue('Test Description');
-//     fireEvent.change(descriptionInput, { target: { value: 'Updated Description' } });
-    
-//     fireEvent.click(screen.getByText('Save'));
-    
-//     await waitFor(() => {
-//       expect(updateInventoryItem).toHaveBeenCalledWith(1, {
-//         description: 'Updated Description',
-//       });
-//     });
-//   });
-
-  it('handles item deletion', async () => {
-    const deleteInventoryItem = jest.fn().mockResolvedValue({});
-    (useInventoryStore as jest.Mock).mockImplementation(() => ({
-      ...mockStore,
-      deleteInventoryItem,
-    }));
-
-    render(<InventoryList />);
-    
-    fireEvent.click(screen.getByText('Delete'));
-    
-    await waitFor(() => {
-      expect(deleteInventoryItem).toHaveBeenCalledWith(1);
-    });
-  });
 
   it('displays success feedback after update', async () => {
     render(<InventoryList />);

@@ -208,7 +208,7 @@ export function InventoryList() {
                       value={state.editForm.price ?? ""}
                       onChange={(e) => {
                         const value = e.target.value;
-                        if (value === "" || /^\d+$/.test(value)) {
+                        if (value === "" || /^\d+(\.\d{0,2})?$/.test(value)) {
                           dispatch({
                             type: "UPDATE_FORM",
                             updates: {
@@ -260,7 +260,7 @@ export function InventoryList() {
                         Qty: {item.quantity}
                       </span>
                       <span className="bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-full">
-                        £ {Number(item.price)}
+                        £ {Number(item.price).toFixed(2)}
                       </span>
                     </motion.div>
                     <motion.div className="flex gap-2" layout>

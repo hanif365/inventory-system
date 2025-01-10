@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     IMGBB_API_KEY: process.env.IMGBB_API_KEY!,
   },
   images: {
-    domains: ['i.ibb.co'], // ImgBB domain for uploaded images
+    domains: ['i.ibb.co', 'example.com'],
   },
 };
 
