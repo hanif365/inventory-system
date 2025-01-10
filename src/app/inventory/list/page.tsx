@@ -2,10 +2,11 @@
 
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import { InventoryList } from "@/components/Inventory/InventoryList";
+
 import { Loading } from "@/components/shared/Loading/Loading";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { InventoryList } from "@/components/Inventory/InventoryList";
 
 export default function InventoryListPage() {
   const { status } = useSession();
