@@ -19,6 +19,10 @@ A modern inventory management system built with Next.js, SQLite, and Zustand. Fe
 
 [View Live Demo](https://inventory-system1.vercel.app/)
 
+## 🚀 API Documentation Link
+
+[View API Documentation](https://documenter.getpostman.com/view/31322920/2sAYQUrF6g)
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js, TypeScript, Tailwind CSS, Framer Motion
