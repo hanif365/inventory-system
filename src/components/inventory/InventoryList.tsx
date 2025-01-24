@@ -139,7 +139,7 @@ export function InventoryList() {
         style={{ alignItems: "start" }}
       >
         <AnimatePresence>
-          {items.map((item, index) => (
+          {items?.map((item, index) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 20 }}

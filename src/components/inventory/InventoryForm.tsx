@@ -423,7 +423,7 @@ export function InventoryForm() {
               }}
               ref={fileInputRef}
               className="hidden"
-              required={isNewItem}
+              // required={isNewItem}
             />
           </motion.div>
         </motion.div>
